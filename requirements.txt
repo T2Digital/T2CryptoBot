@@ -8,3 +8,5 @@ ccxt
 plotly
 numpy
 python-dotenv
+ta-lib
+
