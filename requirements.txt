@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+streamlit
+requests
+pandas
+ccxt
+plotly
+numpy
+python-dotenv
