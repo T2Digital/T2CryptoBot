@@ -1,18 +1,22 @@
+
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 import uuid, time, ccxt
 import pandas as pd
-import talib
+from ta.momentum import RSIIndicator
+from ta.trend import MACD, EMAIndicator
 
 app = FastAPI()
 
-# تسجيل دخول بسيط
+# بيانات تسجيل الدخول
 users_db = {
     "admin": {"username": "admin", "password": "123456", "role": "admin"},
     "test": {"username": "test", "password": "1234", "role": "user"}
 }
+
 active_sessions = {}
 
+# الموديلات
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -24,9 +28,6 @@ class SignalRequest(BaseModel):
 
 @app.post("/login")
 def login(data: LoginRequest):
-    if not data.username or not data.password:
-        raise HTTPException(status_code=400, detail="Missing credentials")
-
     user = users_db.get(data.username)
     if user and user["password"] == data.password:
         token = str(uuid.uuid4())
@@ -36,7 +37,6 @@ def login(data: LoginRequest):
             "timestamp": time.time()
         }
         return {"access_token": token, "token_type": "bearer"}
-    
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.get("/symbols")
@@ -56,10 +56,13 @@ def generate_signal(data: SignalRequest, authorization: str = Header(...)):
     ohlcv = exchange.fetch_ohlcv(data.symbol, timeframe=data.timeframe, limit=200)
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
 
-    df['rsi'] = talib.RSI(df['close'], timeperiod=14)
-    df['macd'], df['macd_signal'], _ = talib.MACD(df['close'])
-    df['ema_20'] = talib.EMA(df['close'], timeperiod=20)
-    df['ema_50'] = talib.EMA(df['close'], timeperiod=50)
+    # تحليل فني باستخدام ta
+    df['rsi'] = RSIIndicator(df['close']).rsi()
+    macd = MACD(df['close'])
+    df['macd'] = macd.macd()
+    df['macd_signal'] = macd.macd_signal()
+    df['ema_20'] = EMAIndicator(df['close'], 20).ema_indicator()
+    df['ema_50'] = EMAIndicator(df['close'], 50).ema_indicator()
 
     last = df.iloc[-1]
     signal = ""
