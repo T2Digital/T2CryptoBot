@@ -46,7 +46,7 @@ if st.button("🔍 تحليل وإشارة"):
         try:
             r = requests.post(
                 f"{API_BASE_URL}/generate-signal",
-                headers={"Authorization": f"{st.session_state.token}"},
+                headers={"Authorization": f"Bearer {st.session_state.token}"},
                 json={"symbol": symbol, "timeframe": timeframe, "risk_reward": risk_reward}
             )
             if r.status_code == 200:
