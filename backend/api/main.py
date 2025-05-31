@@ -23,9 +23,14 @@ class SignalRequest(BaseModel):
     risk_reward: float
 
 @app.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = users_db.get(form_data.username)
-    if user and user["password"] == form_data.password:
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/login")
+def login(data: LoginRequest):
+    user = users_db.get(data.username)
+    if user and user["password"] == data.password:
         token = str(uuid.uuid4())
         active_sessions[token] = {
             "username": user["username"],

@@ -13,7 +13,7 @@ if "token" not in st.session_state:
     password = st.text_input("كلمة المرور", type="password")
     if st.button("دخول"):
         try:
-            r = requests.post(f"{API_BASE_URL}/login", data={"username": username, "password": password})
+            r = requests.post(f"{API_BASE_URL}/login", json={"username": username, "password": password})
             if r.status_code == 200:
                 st.session_state.token = r.json()["access_token"]
                 st.success("✅ تم تسجيل الدخول")
