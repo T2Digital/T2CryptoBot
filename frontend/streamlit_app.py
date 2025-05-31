@@ -1,13 +1,12 @@
+
 import streamlit as st
 import requests
 
-# رابط API الخاص بـ Render
 API_BASE_URL = "https://t2cryptobot.onrender.com"
 
 st.set_page_config(page_title="T2CryptoBot Pro 🐳", layout="wide")
 st.title("📊 T2CryptoBot Pro 🐳")
 
-# تسجيل الدخول
 if "token" not in st.session_state:
     st.subheader("🔐 تسجيل الدخول")
     username = st.text_input("اسم المستخدم")
@@ -24,7 +23,6 @@ if "token" not in st.session_state:
             st.error("🚫 تعذر الاتصال بالخادم.")
     st.stop()
 
-# الشريط الجانبي
 with st.sidebar:
     st.header("⚙️ إعدادات التحليل")
     symbol = st.selectbox("زوج التداول", ["BTC/USDT", "ETH/USDT"])
@@ -32,7 +30,6 @@ with st.sidebar:
     risk_reward = st.slider("نسبة المخاطرة", 1.0, 5.0, 3.0)
     st.markdown("---")
     st.subheader("💎 اشتراكك")
-
     try:
         r = requests.get(f"{API_BASE_URL}/subscription", params={"token": st.session_state.token})
         if r.status_code == 200:
@@ -44,18 +41,13 @@ with st.sidebar:
     except requests.exceptions.RequestException:
         st.warning("⚠️ لا يمكن الوصول إلى الاشتراك الآن.")
 
-# زر التحليل والإشارة
 if st.button("🔍 تحليل وإشارة"):
     with st.spinner("جاري التحليل..."):
         try:
             r = requests.post(
                 f"{API_BASE_URL}/generate-signal",
                 headers={"Authorization": f"Bearer {st.session_state.token}"},
-                json={
-                    "symbol": symbol,
-                    "timeframe": timeframe,
-                    "risk_reward": risk_reward
-                }
+                json={"symbol": symbol, "timeframe": timeframe, "risk_reward": risk_reward}
             )
             if r.status_code == 200:
                 res = r.json()
