@@ -1,20 +1,15 @@
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing import Optional
 import time, uuid
 
 app = FastAPI()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-# قاعدة بيانات المستخدمين
 users_db = {
     "admin": {"username": "admin", "password": "123456", "role": "admin"},
     "test": {"username": "test", "password": "1234", "role": "user"}
 }
 
-# جلسات الدخول
 active_sessions = {}
 
 class SignalRequest(BaseModel):
@@ -22,7 +17,6 @@ class SignalRequest(BaseModel):
     timeframe: str
     risk_reward: float
 
-@app.post("/login")
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -41,7 +35,7 @@ def login(data: LoginRequest):
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.post("/generate-signal")
-async def generate_signal(data: SignalRequest, token: str = Depends(oauth2_scheme)):
+async def generate_signal(data: SignalRequest, token: str):
     if token not in active_sessions:
         raise HTTPException(status_code=403, detail="Unauthorized")
     return {
