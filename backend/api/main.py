@@ -24,6 +24,9 @@ class SignalRequest(BaseModel):
 
 @app.post("/login")
 def login(data: LoginRequest):
+    if not data.username or not data.password:
+        raise HTTPException(status_code=400, detail="Missing credentials")
+
     user = users_db.get(data.username)
     if user and user["password"] == data.password:
         token = str(uuid.uuid4())
@@ -33,6 +36,7 @@ def login(data: LoginRequest):
             "timestamp": time.time()
         }
         return {"access_token": token, "token_type": "bearer"}
+    
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.get("/symbols")
