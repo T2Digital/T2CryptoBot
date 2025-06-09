@@ -2,6 +2,16 @@
 import streamlit as st
 import requests
 
+@st.cache_data
+def get_symbols():
+    try:
+        r = requests.get(f"{API_BASE_URL}/symbols")
+        if r.status_code == 200:
+            return r.json()["symbols"]
+    except:
+        pass
+    return ["BTC/USDT", "ETH/USDT"]
+
 API_BASE_URL = "https://t2cryptobot.onrender.com"
 
 st.set_page_config(page_title="T2CryptoBot Pro 🐳", layout="wide")
@@ -25,7 +35,8 @@ if "token" not in st.session_state:
 
 with st.sidebar:
     st.header("⚙️ إعدادات التحليل")
-    symbol = st.selectbox("زوج التداول", ["BTC/USDT", "ETH/USDT"])
+    symbols = get_symbols()
+    symbol = st.selectbox("زوج التداول", symbols)
     timeframe = st.selectbox("الإطار الزمني", ["5m", "15m", "1h", "4h"])
     risk_reward = st.slider("نسبة المخاطرة", 1.0, 5.0, 3.0)
     st.markdown("---")
