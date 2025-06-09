@@ -1,22 +1,24 @@
-
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
-import uuid, time, ccxt
+import uuid
+import time
+import ccxt
 import pandas as pd
 from ta.momentum import RSIIndicator
 from ta.trend import MACD, EMAIndicator
 
 app = FastAPI()
 
-# بيانات تسجيل الدخول
+# بيانات المستخدمين
 users_db = {
     "admin": {"username": "admin", "password": "123456", "role": "admin"},
     "test": {"username": "test", "password": "1234", "role": "user"}
 }
 
+# تخزين الجلسات
 active_sessions = {}
 
-# الموديلات
+# موديلات
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -37,7 +39,7 @@ def login(data: LoginRequest):
             "timestamp": time.time()
         }
         return {"access_token": token, "token_type": "bearer"}
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+    raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
 
 @app.get("/symbols")
 def get_symbols():
@@ -48,15 +50,15 @@ def get_symbols():
 
 @app.post("/generate-signal")
 def generate_signal(data: SignalRequest, authorization: str = Header(...)):
-    token = authorization.replace("Bearer ", "")
+    token = authorization.replace("Bearer ", "").strip()
     if token not in active_sessions:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+        raise HTTPException(status_code=403, detail="انتهت الجلسة أو غير مصرح")
 
     exchange = ccxt.binance()
     ohlcv = exchange.fetch_ohlcv(data.symbol, timeframe=data.timeframe, limit=200)
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
 
-    # تحليل فني باستخدام ta
+    # المؤشرات الفنية
     df['rsi'] = RSIIndicator(df['close']).rsi()
     macd = MACD(df['close'])
     df['macd'] = macd.macd()
@@ -65,8 +67,8 @@ def generate_signal(data: SignalRequest, authorization: str = Header(...)):
     df['ema_50'] = EMAIndicator(df['close'], 50).ema_indicator()
 
     last = df.iloc[-1]
-    signal = ""
-    confidence = 0
+    signal = "حيادي"
+    confidence = 50
 
     if last['rsi'] < 30 and last['macd'] > last['macd_signal'] and last['ema_20'] > last['ema_50']:
         signal = "شراء قوي"
@@ -74,9 +76,6 @@ def generate_signal(data: SignalRequest, authorization: str = Header(...)):
     elif last['rsi'] > 70 and last['macd'] < last['macd_signal'] and last['ema_20'] < last['ema_50']:
         signal = "بيع قوي"
         confidence = 90
-    else:
-        signal = "حيادي"
-        confidence = 50
 
     return {
         "signal": signal,
